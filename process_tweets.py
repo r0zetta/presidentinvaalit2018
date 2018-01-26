@@ -12,10 +12,7 @@ import os
 import sys
 import io
 import re
-import string
 import json
-
-extra_stopwords = ["ssä", "lle", "h.", "oo", "on", "muk", "kov", "km", "ia", "täm", "sy", "but", ":sta", "hi", "py", "xd", "rr", "x:", "smg", "kum", "uut", "kho", "k", "04n", "vtt", "htt", "väy", "kin", "#8", "van", "tii", "lt3", "g", "ko", "ett", "mys", "tnn", "hyv", "tm", "mit", "kyll", "tss", "siit", "pit", "viel", "sit", "n", "saa", "vuonna", "tll", "eik", "klo", "pitisi", "nin", "nii", "t", "tmn", "lsn", "eivt", "j", "miss", "pivn", "kertoo", "yhn", "mik", "tn", "tt", "sek", "lis", "mist", "tehd", "sai", "esim", "l", "thn", "mm", "nytt", "k", "ku", "s", "hn", "nit", "s", "no", "mitn", "m", "ky", "tst", "mut", "nm", "y", "lpi", "siin", "a", "in", "jlkeen", "ehk", "h", "ollaan", "e", "piv", "oy", "p", "yh", "sill", "min", "o", "va", "el", "tyn", "na", "the", "tit", "to", "iti", "tehdn", "tlt", "ois", ":", "v", "?", "!", "&"]
 
 def try_load_or_process(filename, processor_fn, function_arg):
     load_fn = None
@@ -44,11 +41,9 @@ def save_bin(item, filename):
         cPickle.dump(item, f)
 
 def load_bin(filename):
-    ret = None
     if os.path.exists(filename):
         with open(filename, "rb") as f:
-            ret = cPickle.load(f)
-    return ret
+            return cPickle.load(f)
 
 def save_json(variable, filename):
     with io.open(filename, "w", encoding="utf-8") as f:
@@ -116,6 +111,7 @@ def tokenize_sentences(sentences):
 
 def clean_sentences(tokens):
     all_stopwords = load_json("stopwords-iso.json")
+    extra_stopwords = ["ssä", "lle", "h.", "oo", "on", "muk", "kov", "km", "ia", "täm", "sy", "but", ":sta", "hi", "py", "xd", "rr", "x:", "smg", "kum", "uut", "kho", "k", "04n", "vtt", "htt", "väy", "kin", "#8", "van", "tii", "lt3", "g", "ko", "ett", "mys", "tnn", "hyv", "tm", "mit", "tss", "siit", "pit", "viel", "sit", "n", "saa", "tll", "eik", "nin", "nii", "t", "tmn", "lsn", "j", "miss", "pivn", "yhn", "mik", "tn", "tt", "sek", "lis", "mist", "tehd", "sai", "l", "thn", "mm", "k", "ku", "s", "hn", "nit", "s", "no", "m", "ky", "tst", "mut", "nm", "y", "lpi", "siin", "a", "in", "ehk", "h", "e", "piv", "oy", "p", "yh", "sill", "min", "o", "va", "el", "tyn", "na", "the", "tit", "to", "iti", "tehdn", "tlt", "ois", ":", "v", "?", "!", "&"]
     stopwords = None
     if all_stopwords is not None:
         stopwords = all_stopwords["fi"]
@@ -165,7 +161,7 @@ def get_word2vec(sentences):
                                 workers=num_workers,
                                 size=num_features,
                                 min_count=min_frequency_val,
-                                window=3,
+                                window=5,
                                 sample=0)
 
         print("Building vocab...")
@@ -241,8 +237,8 @@ def test_word2vec(test_words):
                     associations[word].append(s)
         else:
             print("Word " + word + " not in vocab")
-        filename = os.path.join(save_dir, "word2vec_test.json")
-        save_json(output, filename)
+    filename = os.path.join(save_dir, "word2vec_test.json")
+    save_json(output, filename)
     filename = os.path.join(save_dir, "associations.json")
     save_json(associations, filename)
     filename = os.path.join(save_dir, "associations.csv")
@@ -378,12 +374,10 @@ if __name__ == '__main__':
     print("Tokenizing sentences")
     filename = os.path.join(save_dir, "tokens.json")
     tokens = try_load_or_process(filename, tokenize_sentences, processed)
-    print("Unique sentences: " + str(len(tokens)))
 
     print("Cleaning tokens")
     filename = os.path.join(save_dir, "cleaned.json")
     cleaned = try_load_or_process(filename, clean_sentences, tokens)
-    print("Unique sentences: " + str(len(cleaned)))
 
     print("Getting word frequencies")
     filename = os.path.join(save_dir, "frequencies.json")
@@ -425,7 +419,6 @@ if __name__ == '__main__':
     for item in frequencies[:50]:
         test_words.append(item[0])
     results = test_word2vec(test_words)
-
 
     big_plot_dir = os.path.join(save_dir, "big_plots")
     if not os.path.exists(big_plot_dir):
